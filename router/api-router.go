@@ -64,6 +64,18 @@ func SetApiRouter(router *gin.Engine) {
 		// Universal secure verification routes
 		apiRouter.POST("/verify", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.UniversalVerify)
 
+		relayXOpsRoute := apiRouter.Group("/relayx/ops")
+		relayXOpsRoute.Use(middleware.RelayXOpsReadAuth())
+		{
+			relayXOpsRoute.GET("/summary", controller.GetRelayXOpsSummary)
+			relayXOpsRoute.GET("/users", controller.GetRelayXOpsUsers)
+			relayXOpsRoute.GET("/logs", controller.GetRelayXOpsLogs)
+			relayXOpsRoute.GET("/models", controller.GetRelayXOpsModels)
+			relayXOpsRoute.GET("/channels", controller.GetRelayXOpsChannels)
+			relayXOpsRoute.GET("/billing", controller.GetRelayXOpsBilling)
+			relayXOpsRoute.GET("/security-events", controller.GetRelayXOpsSecurityEvents)
+		}
+
 		userRoute := apiRouter.Group("/user")
 		{
 			userRoute.POST("/register", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, middleware.TurnstileCheck(), controller.Register)
