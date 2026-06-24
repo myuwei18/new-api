@@ -1046,3 +1046,105 @@ html.dark .with-pastel-balls::before {
 }
 
 .ec-dbcd0a3c01b55203 { forced-color-adjust: auto; }
+
+/* ==================== RELAYX 运营面板 ==================== */
+.relayx-ops-page {
+  min-height: calc(100vh - 64px);
+  padding: 88px 18px 24px;
+  background: var(--semi-color-bg-0);
+  color: var(--semi-color-text-0);
+}
+
+.relayx-ops-header,
+.relayx-key-row,
+.relayx-ops-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.relayx-ops-header {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.relayx-key-card,
+.relayx-panel-card,
+.relayx-stat-card {
+  border: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-1);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.relayx-key-card {
+  margin-bottom: 12px;
+}
+
+.relayx-key-row {
+  margin-bottom: 8px;
+}
+
+.relayx-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.relayx-stat-value {
+  margin-top: 4px;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--semi-color-text-0);
+}
+
+.relayx-stat-blue { box-shadow: inset 3px 0 0 var(--semi-color-primary); }
+.relayx-stat-green { box-shadow: inset 3px 0 0 var(--semi-color-success); }
+.relayx-stat-orange { box-shadow: inset 3px 0 0 var(--semi-color-warning); }
+.relayx-stat-purple { box-shadow: inset 3px 0 0 #8b5cf6; }
+
+.relayx-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.relayx-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.relayx-empty {
+  padding: 18px 10px;
+}
+
+.relayx-ops-page .semi-card-header {
+  padding: 12px 14px;
+}
+
+.relayx-ops-page .semi-table-tbody > .semi-table-row > .semi-table-row-cell,
+.relayx-ops-page .semi-table-thead > .semi-table-row > .semi-table-row-head {
+  padding: 8px 10px;
+}
+
+@media (max-width: 960px) {
+  .relayx-ops-header,
+  .relayx-key-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relayx-ops-actions {
+    width: 100%;
+  }
+
+  .relayx-stats-grid,
+  .relayx-main-grid,
+  .relayx-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
