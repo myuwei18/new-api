@@ -17,7 +17,7 @@
       <div><div class="title">RELAYX 运营概览</div><div class="sub">只读巡检面板 · 本地空库显示 0 属于正常 · 不展示密钥/Prompt/响应原文</div></div>
       <div class="actions"><select id="window"><option value="1d">近 1 天</option><option value="7d" selected>近 7 天</option><option value="30d">近 30 天</option></select><button id="refresh">刷新</button></div>
     </div>
-    <div class="keybar card"><input id="key" placeholder="请输入 RELAYX_OPS_READ_KEY，本地默认 relayx-local-ops-key" /><button class="primary" id="save">保存 Key</button><button id="load">加载数据</button><div class="updated">更新时间：<span id="updated">尚未加载</span></div></div>
+    <div class="keybar card"><input id="key" placeholder="请输入 RELAYX 运营只读 Key（RELAYX_OPS_READ_KEY / RelayXOpsReadKey）" /><button class="primary" id="save">保存 Key</button><button id="load">加载数据</button><div class="updated">更新时间：<span id="updated">尚未加载</span></div></div>
     <div class="banner" id="error"></div>
     <div class="stats" id="stats"></div>
     <div class="grid3"><div class="panel card"><h3>Top 用户</h3><div id="users"></div></div><div class="panel card"><h3>Top 模型</h3><div id="models"></div></div><div class="panel card"><h3>Top 渠道</h3><div id="channels"></div></div></div>
@@ -27,18 +27,18 @@
 const KEY='relayx_ops_read_key';
 const $=id=>document.getElementById(id); const arr=v=>Array.isArray(v)?v:[];
 const fmt=n=>Number(n||0).toLocaleString('zh-CN'); const pct=n=>(Number(n||0)*100).toFixed(2)+'%';
-const dt=v=>{if(!v)return '-'; const d=new Date(v); if(Number.isNaN(d.getTime()))return String(v); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`};
+const dt=v=>{if(!v)return '-'; const n=typeof v==='number'&&v>0&&v<100000000000?v*1000:v; const d=new Date(n); if(Number.isNaN(d.getTime()))return String(v); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`};
 const esc=s=>String(s??'-').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-$('key').value=localStorage.getItem(KEY)||'relayx-local-ops-key';
+$('key').value=localStorage.getItem(KEY)||'';
 function table(rows,cols){rows=arr(rows); if(!rows.length)return '<div class="empty">暂无数据，本地空库返回 0 属于正常</div>'; return `<table><thead><tr>${cols.map(c=>`<th>${c.t}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${c.f?c.f(r):esc(r[c.k])}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 async function api(path){const key=$('key').value.trim(); const res=await fetch(`${path}?window=${$('window').value}`,{headers:{Authorization:`Bearer ${key}`}}); const data=await res.json().catch(()=>({})); if(!res.ok||data.success===false)throw new Error(data.message||data.error||res.statusText); return data.data||{};}
-async function load(){document.body.classList.add('loading'); $('error').style.display='none'; try{localStorage.setItem(KEY,$('key').value.trim()); const [s,u,l,m,c,b,se]=await Promise.all(['/api/relayx/ops/summary','/api/relayx/ops/users','/api/relayx/ops/logs','/api/relayx/ops/models','/api/relayx/ops/channels','/api/relayx/ops/billing','/api/relayx/ops/security-events'].map(api));
+async function load(){document.body.classList.add('loading'); $('error').style.display='none'; try{if(!$('key').value.trim())throw new Error('请先填写 RELAYX 运营只读 Key'); localStorage.setItem(KEY,$('key').value.trim()); const [s,u,l,m,c,b,se]=await Promise.all(['/api/relayx/ops/summary','/api/relayx/ops/users','/api/relayx/ops/logs','/api/relayx/ops/models','/api/relayx/ops/channels','/api/relayx/ops/billing','/api/relayx/ops/security-events'].map(api));
 $('stats').innerHTML=[['用户总数',fmt(s.total_users??s.users?.total),`活跃 ${fmt(s.active_users??s.users?.active)}`,'blue'],['窗口请求',fmt(s.total_requests??s.requests?.total??s.requests?.requests),`成功 ${fmt(s.success_requests??s.requests?.success)}`,'green'],['失败率',pct(s.failure_rate??s.requests?.failure_rate),`失败 ${fmt(s.failed_requests??s.requests?.failed??s.requests?.failures)}`,'orange'],['窗口消耗',fmt(s.quota??s.used_quota??s.billing?.used_quota),b.currency?`币种 ${esc(b.currency)}`:'quota 聚合值','purple']].map(x=>`<div class="stat card ${x[3]}"><div class="k">${x[0]}</div><div class="v">${x[1]}</div><div class="sub">${x[2]}</div></div>`).join('');
-$('users').innerHTML=table(arr(s.top_users||u.items||u.users||u).slice(0,8),[{t:'用户ID',f:r=>esc(r.user_id??r.id)},{t:'标识',f:r=>esc(r.username||r.email||r.name)},{t:'请求',f:r=>fmt(r.requests)},{t:'消耗',f:r=>fmt(r.quota)}]);
+$('users').innerHTML=table(arr(s.top_users||u.users?.top_by_usage||u.users?.recent_users||u.items||u.users||u).slice(0,8),[{t:'用户ID',f:r=>esc(r.user_id??r.id)},{t:'标识',f:r=>esc(r.username||r.email||r.name)},{t:'请求',f:r=>fmt(r.requests)},{t:'消耗',f:r=>fmt(r.quota)}]);
 $('models').innerHTML=table(arr(s.top_models||m.items||m.models||m).slice(0,8),[{t:'模型',f:r=>esc(r.model_name||r.name)},{t:'请求',f:r=>fmt(r.requests)},{t:'失败率',f:r=>pct(r.failure_rate)}]);
 $('channels').innerHTML=table(arr(s.top_channels||c.items||c.channels||c).slice(0,8),[{t:'渠道',f:r=>esc(r.channel_id??r.id)},{t:'名称',f:r=>esc(r.name||'已脱敏')},{t:'状态',f:r=>`<span class="tag">${esc(r.status??'未知')}</span>`},{t:'失败率',f:r=>pct(r.failure_rate)}]);
 const logCols=[{t:'时间',f:r=>dt(r.created_at||r.time)},{t:'类型',f:r=>`<span class="tag">${esc(r.type||'日志')}</span>`},{t:'摘要',f:r=>esc(r.summary||r.message||r.reason||'已隐藏原始内容')}];
-$('logs').innerHTML=table(arr(l.items||l.logs||l).slice(0,8),logCols); $('security').innerHTML=table(arr(se.items||se.events||se).slice(0,8),logCols); $('updated').textContent=dt(new Date());
+$('logs').innerHTML=table(arr(l.recent||l.items||l.logs||l).slice(0,8),logCols); $('security').innerHTML=table(arr(se.events||se.items||se).slice(0,8),logCols); $('updated').textContent=dt(new Date());
 }catch(e){$('error').textContent='接口请求失败：'+e.message; $('error').style.display='block'}finally{document.body.classList.remove('loading')}};
 $('save').onclick=()=>{localStorage.setItem(KEY,$('key').value.trim()); $('updated').textContent='Key 已保存，等待加载数据'}; $('load').onclick=load; $('refresh').onclick=load; $('window').onchange=load; load();
 </script>

@@ -36,11 +36,11 @@ import { API } from '../../helpers';
 
 const { Title, Text } = Typography;
 const KEY_STORAGE = 'relayx_ops_read_key';
-const DEFAULT_HINT_KEY = 'relayx-local-ops-key';
 
 const formatDateTime = (value) => {
   if (!value) return '-';
-  const date = new Date(value);
+  const normalized = typeof value === 'number' && value > 0 && value < 100000000000 ? value * 1000 : value;
+  const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return String(value);
   const pad = (num) => String(num).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
@@ -93,7 +93,7 @@ const MiniList = ({ title, items, columns }) => (
 
 const RelayXOps = () => {
   const [opsKey, setOpsKey] = useState(() => localStorage.getItem(KEY_STORAGE) || '');
-  const [draftKey, setDraftKey] = useState(() => localStorage.getItem(KEY_STORAGE) || DEFAULT_HINT_KEY);
+  const [draftKey, setDraftKey] = useState(() => localStorage.getItem(KEY_STORAGE) || '');
   const [windowValue, setWindowValue] = useState('7d');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -118,7 +118,7 @@ const RelayXOps = () => {
   const loadOpsData = useCallback(async () => {
     const key = (opsKey || draftKey).trim();
     if (!key) {
-      setError('请先填写 RELAYX 只读 Key，本地开发默认是 relayx-local-ops-key');
+      setError('请先填写 RELAYX 只读 Key。该 Key 只应来自 RELAYX_OPS_READ_KEY 或 RelayXOpsReadKey。');
       return;
     }
     setLoading(true);
@@ -140,12 +140,12 @@ const RelayXOps = () => {
         API.get('/api/relayx/ops/security-events', config),
       ]);
       setSummary(summaryRes.data?.data || {});
-      setUsers(asArray(usersRes.data?.data?.items || usersRes.data?.data?.users || usersRes.data?.data));
-      setLogs(asArray(logsRes.data?.data?.items || logsRes.data?.data?.logs || logsRes.data?.data));
+      setUsers(asArray(usersRes.data?.data?.users?.top_by_usage || usersRes.data?.data?.users?.recent_users || usersRes.data?.data?.users || usersRes.data?.data));
+      setLogs(asArray(logsRes.data?.data?.recent || logsRes.data?.data?.items || logsRes.data?.data?.logs || logsRes.data?.data));
       setModels(asArray(modelsRes.data?.data?.items || modelsRes.data?.data?.models || modelsRes.data?.data));
       setChannels(asArray(channelsRes.data?.data?.items || channelsRes.data?.data?.channels || channelsRes.data?.data));
       setBilling(billingRes.data?.data || {});
-      setSecurityEvents(asArray(securityRes.data?.data?.items || securityRes.data?.data?.events || securityRes.data?.data));
+      setSecurityEvents(asArray(securityRes.data?.data?.events || securityRes.data?.data?.items || securityRes.data?.data));
       setLastLoadedAt(new Date().toISOString());
       setOpsKey(key);
       localStorage.setItem(KEY_STORAGE, key);
@@ -244,7 +244,7 @@ const RelayXOps = () => {
             prefix={<IconSearch />}
             value={draftKey}
             onChange={setDraftKey}
-            placeholder='请输入 RELAYX_OPS_READ_KEY，本地默认 relayx-local-ops-key'
+            placeholder='请输入 RELAYX 运营只读 Key（RELAYX_OPS_READ_KEY / RelayXOpsReadKey）'
             onEnterPress={() => {
               saveKey();
               loadOpsData();
